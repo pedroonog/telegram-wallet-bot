@@ -1,5 +1,5 @@
 // =================================================================
-// ARQUIVO: index.js (VERSÃO FINAL COM COMANDO /plans)
+// ARQUIVO: index.js (VERSÃO FINAL COM CORREÇÃO DO BOTÃO PLANS)
 // =================================================================
 
 require('dotenv').config();
@@ -31,14 +31,12 @@ const PLANS = {
 
 // --- LÓGICA SEPARADA PARA REUSO ---
 
-// Função para mostrar os planos
 const showPlans = (ctx) => {
     return ctx.replyWithHTML('<b>Choose your subscription plan:</b>', Markup.inlineKeyboard([
-        [Markup.button.callback('View Monthly Subscriptions ��', 'view_subscriptions')]
+        [Markup.button.callback('View Monthly Subscriptions 💳', 'view_subscriptions')]
     ]));
 };
 
-// Função para mostrar as carteiras
 const showWallets = async (ctx) => {
     const user = await User.findOne({ telegramId: ctx.chat.id });
     if (!user || user.wallets.length === 0) {
@@ -48,7 +46,7 @@ const showWallets = async (ctx) => {
     let message = `📋 <b>Monitored Wallets (${user.wallets.length}/${PLANS[user.plan]?.limit ?? 0})</b>\n\n`;
     const inlineKeyboard = user.wallets.flatMap(wallet => [
         [Markup.button.callback(`▪️ ${wallet.name} (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)})`, `noop`)],
-        [Markup.button.callback('🗑️ Remove', `remove_wallet:${wallet.name}`)]
+        [Markup.button.callback('��️ Remove', `remove_wallet:${wallet.name}`)]
     ]);
     return ctx.replyWithHTML(message, Markup.inlineKeyboard(inlineKeyboard));
 };
@@ -68,10 +66,12 @@ const main = async () => {
     });
     
     // --- Handlers dos botões do teclado ---
-    bot.hears('�� Plans', showPlans);
+    // =========================================================
+    // ||               AQUI ESTÁ A CORREÇÃO                  ||
+    // =========================================================
+    bot.hears('💎 Plans', showPlans); // Corrigido o emoji para corresponder ao botão
     bot.hears('📋 My Wallets', showWallets);
     
-    // --- ATUALIZAÇÃO DA MENSAGEM DE AJUDA ---
     bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(
         `*Commands Guide*:\n\n` +
         `*/mywallets* - Show your monitored wallets.\n` +
@@ -81,7 +81,7 @@ const main = async () => {
     bot.hears('➕ Add Wallet', (ctx) => ctx.reply('Use the format:\n`/addwallet <name> <address>`', { parse_mode: 'Markdown' }));
 
     // --- Definição dos Comandos ---
-    bot.command('plans', showPlans); // <-- ALTERAÇÃO APLICADA AQUI
+    bot.command('plans', showPlans);
     bot.command('mywallets', showWallets);
 
     bot.command('addwallet', async (ctx) => {
@@ -171,3 +171,4 @@ const main = async () => {
 };
 
 main();
+    
