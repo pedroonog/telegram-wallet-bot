@@ -47,11 +47,11 @@ const main = async () => {
             { $setOnInsert: { wallets: [], plan: 'free' } },
             { upsert: true, returnDocument: 'after' }
         );
-        return ctx.reply('Welcome! Use the menu to manage wallets or /planos to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
+        return ctx.reply('Welcome! Use the menu to manage wallets or /plans to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
     });
 
-    bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(`*Commands Guide*:\n\n*/mywallets* - Show your monitored wallets.\n*/addwallet <name> <address>* - Add a new wallet to monitor.\n*/planos* - View and manage subscription plans.`));
-    bot.hears('💎 Plans', (ctx) => bot.handleUpdate({ message: { text: '/planos', chat: { id: ctx.chat.id } } }));
+    bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(`*Commands Guide*:\n\n*/mywallets* - Show your monitored wallets.\n*/addwallet <name> <address>* - Add a new wallet to monitor.\n*/plans* - View and manage subscription plans.`));
+    bot.hears('💎 Plans', (ctx) => bot.handleUpdate({ message: { text: '/plans', chat: { id: ctx.chat.id } } }));
     bot.hears('➕ Add Wallet', (ctx) => ctx.reply('Use the format:\n`/addwallet <name> <address>`', { parse_mode: 'Markdown' }));
 
     bot.command('addwallet', async (ctx) => {
@@ -105,7 +105,7 @@ const main = async () => {
     });
 
     // --- LÓGICA DE PAGAMENTOS ---
-    bot.command('planos', (ctx) => {
+    bot.command('plans', (ctx) => {
         ctx.replyWithHTML('<b>Choose your subscription plan:</b>', Markup.inlineKeyboard([
             [Markup.button.callback('View Monthly Subscriptions ��', 'view_subscriptions')]
         ]));
