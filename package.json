@@ -12,6 +12,7 @@
   "description": "",
   "dependencies": {
     "axios": "^1.13.5",
+    "coinbase-commerce-node": "^1.0.4",
     "dotenv": "^17.3.1",
     "ethers": "^6.16.0",
     "express": "^5.2.1",
