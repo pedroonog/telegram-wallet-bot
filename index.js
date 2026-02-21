@@ -1,5 +1,5 @@
 // =================================================================
-// ARQUIVO: index.js (VERSÃO FINAL COM PAGAMENTOS INTEGRADOS - COINBASE DESATIVADO)
+// ARQUIVO: index.js (VERSÃO FINAL COM CORREÇÃO DE CRIAÇÃO DE USUÁRIO)
 // =================================================================
 
 require('dotenv').config();
@@ -48,16 +48,17 @@ const main = async () => {
     // --- COMANDOS E INTERAÇÕES DO TELEGRAM ---
 
     bot.start(async (ctx) => {
+        // Encontra ou cria o usuário e retorna o documento atualizado
         await User.findOneAndUpdate(
             { telegramId: ctx.chat.id },
             { $setOnInsert: { wallets: [], plan: 'free' } },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' } // Correção do 'new:true'
         );
-        return ctx.reply('Welcome! Use the menu to manage wallets or /planos to upgrade.', Markup.keyboard([['�� My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
+        return ctx.reply('Welcome! Use the menu to manage wallets or /planos to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
     });
 
     bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(`*Commands Guide*:\n\n*/mywallets* - Show your monitored wallets.\n*/addwallet <name> <address>* - Add a new wallet to monitor.\n*/planos* - View and manage subscription plans.`));
-    bot.hears('�� Plans', (ctx) => bot.handleUpdate({ message: { text: '/planos', chat: { id: ctx.chat.id } } }));
+    bot.hears('💎 Plans', (ctx) => bot.handleUpdate({ message: { text: '/planos', chat: { id: ctx.chat.id } } }));
     bot.hears('➕ Add Wallet', (ctx) => ctx.reply('Use the format:\n`/addwallet <name> <address>`', { parse_mode: 'Markdown' }));
 
     bot.command('addwallet', async (ctx) => {
@@ -69,7 +70,13 @@ const main = async () => {
             const walletAddress = parts.join(' ');
             if (!ethers.isAddress(walletAddress)) return ctx.reply('❌ Invalid wallet address.');
 
-            const user = await User.findOne({ telegramId: ctx.chat.id });
+            // CORREÇÃO PRINCIPAL: Encontra ou CRIA o usuário se ele não existir
+            const user = await User.findOneAndUpdate(
+                { telegramId: ctx.chat.id },
+                { $setOnInsert: { wallets: [], plan: 'free' } }, // Só executa na criação
+                { upsert: true, returnDocument: 'after' }      // Opções: cria se não existe e retorna o doc atualizado
+            );
+
             const planLimit = PLANS[user.plan]?.limit ?? 0;
 
             if (user.wallets.length >= planLimit) {
@@ -79,8 +86,12 @@ const main = async () => {
             const existingWallet = await User.findOne({ "wallets.address": walletAddress });
             if (existingWallet) return ctx.reply(`⚠️ This address is already being monitored by another user.`);
             
-            user.wallets.push({ name: walletName, address: walletAddress });
-            await user.save();
+            // Adiciona a nova carteira ao array do usuário
+            await User.updateOne(
+                { telegramId: ctx.chat.id },
+                { $push: { wallets: { name: walletName, address: walletAddress } } }
+            );
+
             return ctx.replyWithHTML(`✅ Wallet <b>'${walletName}'</b> added!`);
 
         } catch (error) {
@@ -89,7 +100,7 @@ const main = async () => {
         }
     });
 
-    bot.command('mywallets', (ctx) => bot.handleUpdate({ message: { text: '📋 My Wallets', chat: { id: ctx.chat.id } } }));
+    bot.command('mywallets', (ctx) => bot.handleUpdate({ message: { text: '�� My Wallets', chat: { id: ctx.chat.id } } }));
     bot.hears('📋 My Wallets', async (ctx) => {
         const user = await User.findOne({ telegramId: ctx.chat.id });
         if (!user || user.wallets.length === 0) return ctx.replyWithHTML("You are not monitoring any wallets yet.");
@@ -176,7 +187,7 @@ const main = async () => {
                                     continue;
                                 }
                                 const amount = parseFloat(ethers.formatEther(tx.value));
-                                const icon = tx.from.toLowerCase() === walletAddressLower ? '�� Sent from' : '💰 Received on';
+                                const icon = tx.from.toLowerCase() === walletAddressLower ? '📤 Sent from' : '💰 Received on';
                                 const notification = `${icon} <b>${wallet.name}</b>\n\n<b>${amount.toFixed(6)} ETH</b>\n\n<a href="https://etherscan.io/tx/${tx.hash}">View on Etherscan</a>`;
                                 await bot.telegram.sendMessage(user.telegramId, notification, { parse_mode: 'HTML', disable_web_page_preview: true });
                                 latestBlockForUpdate = Math.max(latestBlockForUpdate, parseInt(tx.blockNumber) + 1).toString();
