@@ -112,7 +112,7 @@ const main = async () => {
     });
 
     bot.action('view_subscriptions', (ctx) => {
-        const buttons = Object.entries(PLANS)
+        const buttons = Object.entries(plans)
             .filter(([key]) => key !== 'free')
             .map(([key, { name }]) => [Markup.button.callback(name, `pay_stripe:${key}`)]);
         
