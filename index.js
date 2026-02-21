@@ -1,5 +1,5 @@
 // =================================================================
-// ARQUIVO: index.js (VERSÃO FINAL COM CORREÇÃO NOS BOTÕES DO TECLADO)
+// ARQUIVO: index.js (VERSÃO FINAL COM COMANDO /plans)
 // =================================================================
 
 require('dotenv').config();
@@ -29,6 +29,32 @@ const PLANS = {
   premium: { name: 'Premium Plan', priceStripeId: 'price_SEU_ID_PREMIUM', limit: 50 },
 };
 
+// --- LÓGICA SEPARADA PARA REUSO ---
+
+// Função para mostrar os planos
+const showPlans = (ctx) => {
+    return ctx.replyWithHTML('<b>Choose your subscription plan:</b>', Markup.inlineKeyboard([
+        [Markup.button.callback('View Monthly Subscriptions ��', 'view_subscriptions')]
+    ]));
+};
+
+// Função para mostrar as carteiras
+const showWallets = async (ctx) => {
+    const user = await User.findOne({ telegramId: ctx.chat.id });
+    if (!user || user.wallets.length === 0) {
+        return ctx.replyWithHTML("You are not monitoring any wallets yet. Use the '➕ Add Wallet' button to start.");
+    }
+    
+    let message = `📋 <b>Monitored Wallets (${user.wallets.length}/${PLANS[user.plan]?.limit ?? 0})</b>\n\n`;
+    const inlineKeyboard = user.wallets.flatMap(wallet => [
+        [Markup.button.callback(`▪️ ${wallet.name} (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)})`, `noop`)],
+        [Markup.button.callback('🗑️ Remove', `remove_wallet:${wallet.name}`)]
+    ]);
+    return ctx.replyWithHTML(message, Markup.inlineKeyboard(inlineKeyboard));
+};
+
+
+// --- FUNÇÃO PRINCIPAL DA APLICAÇÃO ---
 const main = async () => {
     await connectDb();
 
@@ -38,17 +64,25 @@ const main = async () => {
             { $setOnInsert: { wallets: [], plan: 'free' } },
             { upsert: true, returnDocument: 'after' }
         );
-        return ctx.reply('Welcome! Use the menu to manage wallets or /planos to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
+        return ctx.reply('Welcome! Use the menu to manage wallets or /plans to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
     });
     
-    // =========================================================
-    // ||               AQUI ESTÁ A CORREÇÃO                  ||
-    // =========================================================
-    bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(`*Commands Guide*:\n\n*/mywallets* - Show your monitored wallets.\n*/addwallet <name> <address>* - Add a new wallet to monitor.\n*/planos* - View and manage subscription plans.`));
-    bot.hears('💎 Plans', (ctx) => bot.handleUpdate({ message: { text: '/planos', chat: { id: ctx.chat.id } } }));
+    // --- Handlers dos botões do teclado ---
+    bot.hears('�� Plans', showPlans);
+    bot.hears('📋 My Wallets', showWallets);
+    
+    // --- ATUALIZAÇÃO DA MENSAGEM DE AJUDA ---
+    bot.hears('ℹ️ Help', (ctx) => ctx.replyWithMarkdown(
+        `*Commands Guide*:\n\n` +
+        `*/mywallets* - Show your monitored wallets.\n` +
+        `*/addwallet <name> <address>* - Add a new wallet to monitor.\n` +
+        `*/plans* - View and manage subscription plans.`
+    ));
     bot.hears('➕ Add Wallet', (ctx) => ctx.reply('Use the format:\n`/addwallet <name> <address>`', { parse_mode: 'Markdown' }));
-    bot.hears('📋 My Wallets', (ctx) => bot.handleUpdate({ message: { text: '/mywallets', chat: { id: ctx.chat.id } } }));
 
+    // --- Definição dos Comandos ---
+    bot.command('plans', showPlans); // <-- ALTERAÇÃO APLICADA AQUI
+    bot.command('mywallets', showWallets);
 
     bot.command('addwallet', async (ctx) => {
         try {
@@ -68,7 +102,7 @@ const main = async () => {
             const planLimit = PLANS[user.plan]?.limit ?? 0;
 
             if (user.wallets.length >= planLimit) {
-                return ctx.reply(`You have reached the limit of ${planLimit} wallets for your plan (${user.plan}). Please upgrade using /planos.`);
+                return ctx.reply(`You have reached the limit of ${planLimit} wallets for your plan (${user.plan}). Please use /plans to upgrade.`);
             }
 
             const existingWallet = await User.findOne({ "wallets.address": walletAddress });
@@ -87,23 +121,7 @@ const main = async () => {
         }
     });
 
-    bot.command('mywallets', async (ctx) => {
-        const user = await User.findOne({ telegramId: ctx.chat.id });
-        if (!user || user.wallets.length === 0) return ctx.replyWithHTML("You are not monitoring any wallets yet.");
-        
-        let message = `📋 <b>Monitored Wallets (${user.wallets.length}/${PLANS[user.plan]?.limit ?? 0})</b>\n\n`;
-        const inlineKeyboard = user.wallets.flatMap(wallet => [
-            [Markup.button.callback(`▪️ ${wallet.name} (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)})`, `noop`)],
-            [Markup.button.callback('��️ Remove', `remove_wallet:${wallet.name}`)]
-        ]);
-        return ctx.replyWithHTML(message, Markup.inlineKeyboard(inlineKeyboard));
-    });
-
-    bot.command('planos', (ctx) => {
-        ctx.replyWithHTML('<b>Choose your subscription plan:</b>', Markup.inlineKeyboard([
-            [Markup.button.callback('View Monthly Subscriptions 💳', 'view_subscriptions')]
-        ]));
-    });
+    // --- Lógica dos Botões Inline (dentro dos menus) ---
 
     bot.action('view_subscriptions', (ctx) => {
         const buttons = Object.entries(PLANS)
@@ -124,11 +142,11 @@ const main = async () => {
     });
 
     bot.action(/pay_stripe:(.+)/, async (ctx) => {
-        // ... (resto do código sem alterações)
+        // ... (código do stripe não muda)
     });
     
     const checkTransactions = async () => {
-        // ... (resto do código sem alterações)
+        // ... (código do checkTransactions não muda)
     };
     setInterval(checkTransactions, 30000);
     console.log('🔁 Transaction monitoring loop started.');
@@ -136,7 +154,7 @@ const main = async () => {
     app.use(express.raw({ type: 'application/json' }));
 
     app.post('/stripe-webhook', async (req, res) => {
-        // ... (resto do código sem alterações)
+        // ... (código do webhook não muda)
     });
 
     app.get('/', (req, res) => {
