@@ -1,5 +1,5 @@
 // =================================================================
-// ARQUIVO: index.js (VERSÃO FINAL COM CORREÇÃO DE CRIAÇÃO DE USUÁRIO)
+// ARQUIVO: index.js (VERSÃO FINAL COM TODAS AS CORREÇÕES)
 // =================================================================
 
 require('dotenv').config();
@@ -8,7 +8,6 @@ const { ethers } = require('ethers');
 const axios = require('axios');
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// const coinbase = require('coinbase-commerce-node'); // << DESATIVADO
 
 // --- Importações do nosso novo database.js ---
 const { connectDb, User } = require('./database.js');
@@ -26,10 +25,6 @@ if (!token || !etherscanApiKey || !process.env.MONGO_URI || !process.env.STRIPE_
 // --- Inicialização dos Serviços ---
 const bot = new Telegraf(token);
 const app = express();
-// const Client = coinbase.Client; // << DESATIVADO
-// Client.init(process.env.COINBASE_COMMERCE_API_KEY); // << DESATIVADO
-// const Charge = coinbase.resources.Charge; // << DESATIVADO
-// const Webhook = coinbase.Webhook; // << DESATIVADO
 
 // --- ESTRUTURA DE PLANOS ---
 const PLANS = {
@@ -37,7 +32,6 @@ const PLANS = {
   basic: { name: 'Basic Plan', priceStripeId: 'price_SEU_ID_BASICO', limit: 10 },
   intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_SEU_ID_INTERMEDIARIO', limit: 25 },
   premium: { name: 'Premium Plan', priceStripeId: 'price_SEU_ID_PREMIUM', limit: 50 },
-  // lifetime: { name: 'Lifetime Plan', priceUSD: '300.00', limit: Infinity } // << DESATIVADO
 };
 
 // --- FUNÇÃO PRINCIPAL DA APLICAÇÃO ---
@@ -48,11 +42,10 @@ const main = async () => {
     // --- COMANDOS E INTERAÇÕES DO TELEGRAM ---
 
     bot.start(async (ctx) => {
-        // Encontra ou cria o usuário e retorna o documento atualizado
         await User.findOneAndUpdate(
             { telegramId: ctx.chat.id },
             { $setOnInsert: { wallets: [], plan: 'free' } },
-            { upsert: true, returnDocument: 'after' } // Correção do 'new:true'
+            { upsert: true, returnDocument: 'after' }
         );
         return ctx.reply('Welcome! Use the menu to manage wallets or /planos to upgrade.', Markup.keyboard([['📋 My Wallets', '💎 Plans'], ['➕ Add Wallet', 'ℹ️ Help']]).resize());
     });
@@ -70,11 +63,10 @@ const main = async () => {
             const walletAddress = parts.join(' ');
             if (!ethers.isAddress(walletAddress)) return ctx.reply('❌ Invalid wallet address.');
 
-            // CORREÇÃO PRINCIPAL: Encontra ou CRIA o usuário se ele não existir
             const user = await User.findOneAndUpdate(
                 { telegramId: ctx.chat.id },
-                { $setOnInsert: { wallets: [], plan: 'free' } }, // Só executa na criação
-                { upsert: true, returnDocument: 'after' }      // Opções: cria se não existe e retorna o doc atualizado
+                { $setOnInsert: { wallets: [], plan: 'free' } },
+                { upsert: true, returnDocument: 'after' }
             );
 
             const planLimit = PLANS[user.plan]?.limit ?? 0;
@@ -86,7 +78,6 @@ const main = async () => {
             const existingWallet = await User.findOne({ "wallets.address": walletAddress });
             if (existingWallet) return ctx.reply(`⚠️ This address is already being monitored by another user.`);
             
-            // Adiciona a nova carteira ao array do usuário
             await User.updateOne(
                 { telegramId: ctx.chat.id },
                 { $push: { wallets: { name: walletName, address: walletAddress } } }
@@ -100,8 +91,8 @@ const main = async () => {
         }
     });
 
-    bot.command('mywallets', (ctx) => bot.handleUpdate({ message: { text: '�� My Wallets', chat: { id: ctx.chat.id } } }));
-    bot.hears('📋 My Wallets', async (ctx) => {
+    bot.command('mywallets', (ctx) => bot.handleUpdate({ message: { text: '📋 My Wallets', chat: { id: ctx.chat.id } } }));
+    bot.hears('�� My Wallets', async (ctx) => {
         const user = await User.findOne({ telegramId: ctx.chat.id });
         if (!user || user.wallets.length === 0) return ctx.replyWithHTML("You are not monitoring any wallets yet.");
         
@@ -115,12 +106,9 @@ const main = async () => {
 
     // --- LÓGICA DE PAGAMENTOS ---
     bot.command('planos', (ctx) => {
-        ctx.replyWithHTML(
-            '<b>Choose your subscription plan:</b>',
-            Markup.inlineKeyboard([
-                [Markup.button.callback('View Monthly Subscriptions 💳', 'view_subscriptions')]
-            ])
-        );
+        ctx.replyWithHTML('<b>Choose your subscription plan:</b>', Markup.inlineKeyboard([
+            [Markup.button.callback('View Monthly Subscriptions ��', 'view_subscriptions')]
+        ]));
     });
 
     bot.action('view_subscriptions', (ctx) => {
@@ -135,12 +123,9 @@ const main = async () => {
     });
 
     bot.action('back_to_main_menu', (ctx) => {
-        ctx.editMessageText(
-            '<b>Choose your subscription plan:</b>', {
+        ctx.editMessageText('<b>Choose your subscription plan:</b>', {
             parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [[Markup.button.callback('View Monthly Subscriptions 💳', 'view_subscriptions')]]
-            }
+            reply_markup: { inline_keyboard: [[Markup.button.callback('View Monthly Subscriptions 💳', 'view_subscriptions')]] }
         });
     });
 
@@ -153,7 +138,7 @@ const main = async () => {
             payment_method_types: ['card'],
             line_items: [{ price: plan.priceStripeId, quantity: 1 }],
             mode: 'subscription',
-            success_url: `https://t.me/${ctx.botInfo.username}`, // Link de retorno para o seu bot
+            success_url: `https://t.me/${ctx.botInfo.username}`,
             cancel_url: `https://t.me/${ctx.botInfo.username}`,
             client_reference_id: ctx.chat.id.toString(),
             metadata: { plan: planKey }
@@ -216,7 +201,9 @@ const main = async () => {
     console.log('🔁 Transaction monitoring loop started.');
 
     // --- WEBHOOKS E SERVIDOR WEB ---
-    app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    app.use(express.raw({ type: 'application/json' })); // Usar o raw parser para todos os webhooks
+
+    app.post('/stripe-webhook', async (req, res) => {
         const sig = req.headers['stripe-signature'];
         let event;
 
@@ -235,7 +222,7 @@ const main = async () => {
             const user = await User.findOneAndUpdate(
                 { telegramId: parseInt(userId) },
                 { $set: { plan: planKey, 'subscription.status': 'active', 'subscription.provider': 'stripe' } },
-                { new: true }
+                { returnDocument: 'after' }
             );
 
             if (user) {
@@ -245,39 +232,16 @@ const main = async () => {
         res.status(200).send();
     });
 
-    /* << BLOCO COINBASE DESATIVADO
-    app.post('/coinbase-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-        try {
-            const event = Webhook.verifyEventBody(
-                req.rawBody,
-                req.headers['x-cc-webhook-signature'],
-                process.env.COINBASE_WEBHOOK_SECRET
-            );
-
-            if (event.type === 'charge:confirmed') {
-                const userId = event.data.metadata.user_id;
-                const user = await User.findOneAndUpdate(
-                    { telegramId: userId },
-                    { $set: { plan: 'lifetime', 'subscription.status': 'active' } },
-                    { new: true }
-                );
-                if (user) {
-                    await bot.telegram.sendMessage(userId, '✅ Payment confirmed! You now have lifetime access.');
-                }
-            }
-            res.sendStatus(200);
-        } catch (error) {
-            console.error('Error handling Coinbase webhook:', error);
-            res.status(400).send('Webhook Error');
-        }
+    // Rota para o Health Check do Railway
+    app.get('/', (req, res) => {
+        res.status(200).send('Bot is running and healthy.');
     });
-    */
 
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`�� Server running on port ${PORT}`));
 
     // Inicia o bot
-    bot.launch().then(() => console.log('Bot is online and connected to DB!'));
+    bot.launch().then(() => console.log('🤖 Bot is online and connected to DB!'));
     
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
