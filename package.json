@@ -17,6 +17,7 @@
     "ethers": "^6.16.0",
     "express": "^5.2.1",
     "mongodb": "^7.1.0",
+    "mongoose": "^9.2.1",
     "stripe": "^20.3.1",
     "telegraf": "^4.16.3"
   }
