@@ -17,9 +17,9 @@ const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 // Lembre-se de usar os limites corretos que você definiu
 const PLANS = {
     free: { name: 'Free', limit: 1 },
-    basic: { name: 'Basic Plan', priceStripeId: 'price_SEU_ID_BASICO', limit: 3, priceUSD: 5.00 },
-    intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_SEU_ID_INTERMEDIARIO', limit: 5, priceUSD: 12.00 },
-    premium: { name: 'Premium Plan', priceStripeId: 'price_SEU_ID_PREMIUM', limit: 10, priceUSD: 19.00 },
+    basic: { name: 'Basic Plan', priceStripeId: 'price_1T3M3wGo3ScKFeOCAvbhPhWH', limit: 3, priceUSD: 5.00 },
+    intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_1T3M4sGo3ScKFeOCMZY3X60r', limit: 5, priceUSD: 12.00 },
+    premium: { name: 'Premium Plan', priceStripeId: 'price_1T3M5XGo3ScKFeOChUEJ9OzP', limit: 10, priceUSD: 19.00 },
 };
 
 // --- BANCO DE DADOS (MONGOOSE) ---
@@ -61,7 +61,17 @@ const mainKeyboard = Markup.keyboard([
 
 bot.start(async (ctx) => {
     await getOrCreateUser(ctx);
-    ctx.reply(`Welcome, ${ctx.from.first_name}!\n\nI am your Ethereum Wallet Monitoring Bot.`, mainKeyboard);
+    ctx.reply(`Welcome, ${ctx.from.first_name}!\n\nI am your Wallet Monitoring Bot.*How to use me:*
+
+*1. Add a Wallet:*
+- Click the "➕ Add Wallet" button and send me the address.
+- Or, you can just paste a valid Ethereum address directly into the chat at any time!
+
+*2. View Wallets:*
+- Click "📋 My Wallets" to see all wallets you are monitoring and your current limit.
+
+*3. Upgrade Plan:*
+- Click "🌟 Plans" to see available subscriptions and increase your wallet limit.`, mainKeyboard);
 });
 
 bot.hears('❓ Help', (ctx) => {
@@ -69,7 +79,7 @@ bot.hears('❓ Help', (ctx) => {
 *How to use me:*
 
 *1. Add a Wallet:*
-- Click the "➕ Add Wallet" button and send me the address.
+- Click the "➕ Add Wallet" button and send me the name and the address.
 - Or, you can just paste a valid Ethereum address directly into the chat at any time!
 
 *2. View Wallets:*
