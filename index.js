@@ -79,19 +79,19 @@ bot.hears('❓ Help', (ctx) => {
 *How to use me:*
 
 *1. Add a Wallet:*
-- Click the "➕ Add Wallet" button and send me the name and the address.
+- /addWallet or Click the "➕ Add Wallet" button and send me the name and the address.
 - Or, you can just paste a valid Ethereum address directly into the chat at any time!
 
 *2. View Wallets:*
-- Click "📋 My Wallets" to see all wallets you are monitoring and your current limit.
+- /myWallets orClick "📋 My Wallets" to see all wallets you are monitoring and your current limit.
 
 *3. Upgrade Plan:*
-- Click "🌟 Plans" to see available subscriptions and increase your wallet limit.
+- /plans or Click "🌟 Plans" to see available subscriptions and increase your wallet limit.
     `;
     ctx.replyWithMarkdown(helpMessage);
 });
 
-bot.hears('�� Plans', (ctx) => {
+bot.hears('🌟 Plans', (ctx) => {
     // ... (código dos planos permanece o mesmo)
 });
 
