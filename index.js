@@ -19,9 +19,9 @@ const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 // !! IMPORTANTE !! Substitua 'price_...' pelos IDs de API reais dos seus preços no Stripe.
 const PLANS = {
     free: { name: 'Free', limit: 1 }, // Limite padrão para novos usuários
-    basic: { name: 'Basic Plan', priceStripeId: 'price_SEU_ID_BASICO', limit: 3, priceUSD: 5.00 },
-    intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_SEU_ID_INTERMEDIARIO', limit: 5, priceUSD: 12.00 },
-    premium: { name: 'Premium Plan', priceStripeId: 'price_SEU_ID_PREMIUM', limit: 10, priceUSD: 19.00 },
+    basic: { name: 'Basic Plan', priceStripeId: 'price_1T3M3wGo3ScKFeOCAvbhPhWH', limit: 3, priceUSD: 5.00 },
+    intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_1T3M4sGo3ScKFeOCMZY3X60r', limit: 5, priceUSD: 12.00 },
+    premium: { name: 'Premium Plan', priceStripeId: 'price_1T3M5XGo3ScKFeOChUEJ9OzP', limit: 10, priceUSD: 19.00 },
 };
 
 // --- BANCO DE DADOS (MONGOOSE) ---
