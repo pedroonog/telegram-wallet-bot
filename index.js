@@ -27,9 +27,9 @@ const app = express();
 // =========================================================
 const PLANS = {
   free: { name: 'Free Plan', limit: 3, priceUSD: 0 },
-  basic: { name: 'Basic Plan', priceStripeId: 'price_SEU_ID_BASICO', limit: 10, priceUSD: 5.00 },
-  intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_SEU_ID_INTERMEDIARIO', limit: 25, priceUSD: 12.00 },
-  premium: { name: 'Premium Plan', priceStripeId: 'price_SEU_ID_PREMIUM', limit: 50, priceUSD: 19.00 },
+  basic: { name: 'Basic Plan', priceStripeId: 'price_1T3M3wGo3ScKFeOCAvbhPhWH', limit: 10, priceUSD: 5.00 },
+  intermediate: { name: 'Intermediate Plan', priceStripeId: 'price_1T3M4sGo3ScKFeOCMZY3X60r', limit: 25, priceUSD: 12.00 },
+  premium: { name: 'Premium Plan', priceStripeId: 'price_1T3M5XGo3ScKFeOChUEJ9OzP', limit: 50, priceUSD: 19.00 },
 };
 
 // --- LÓGICA SEPARADA PARA REUSO ---
